@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { TimeRange, dateTime, dateTimeParse, DisplayProcessor, Field, getDisplayProcessor } from '@grafana/data';
+import { TimeRange, dateTime, dateTimeParse, DisplayProcessor, Field, getDisplayProcessor, RawTimeRange } from '@grafana/data';
 
 export interface Point {
   time: number;
@@ -87,14 +87,47 @@ export const bucketize = (
   timeField: Field<number>,
   valueField: Field<number>,
   timeZone: string,
-  timeRange: TimeRange,
+  timeRange: (TimeRange | { from: Date, to: Date, raw: RawTimeRange }),
   dailyInterval: [number, number]
 ): BucketData => {
   // Convert data frame fields to rows.
-  const rows = Array.from({ length: timeField.values.length }, (_, i) => ({
+  let rows = Array.from({ length: timeField.values.length }, (_, i) => ({
     time: timeField.values.get(i),
     value: valueField.values.get(i),
   }));
+
+  const oneDay = 1000 * 60 * 60 * 24
+  const oneWeek = oneDay * 7;
+  const timezoneOffset = new Date().getTimezoneOffset() * 60 * 1000;
+
+  const isMonday = (millis: number) => {
+    millis = Number(millis) - timezoneOffset;
+    let someMonday = new Date('2020-01-06').getTime() - timezoneOffset;
+    someMonday = someMonday % oneWeek - someMonday % oneDay;
+
+    millis = millis % oneWeek - millis % oneDay;
+    return millis === someMonday;
+  }
+
+  let nonMondayMet = false;
+  let firstMonday = null;
+  for (let i = 0; i < rows.length; i++) {
+    const todayIsMonday = isMonday(rows[i].time);
+    if (!todayIsMonday && !nonMondayMet) {
+      nonMondayMet = true;
+    }
+    if (todayIsMonday && nonMondayMet && !firstMonday) {
+      firstMonday = rows[i].time
+    }
+
+    if (firstMonday === null) {
+      rows[i].time += oneWeek;
+    } else if (rows[i].time >= (firstMonday + oneWeek)) {
+      const diff = rows[i].time - firstMonday;
+
+      rows[i].time -= oneWeek * Math.floor(diff / oneWeek);
+    }
+  }
 
   // Get the time range extents in the dashboard time zone.
   const extents = [

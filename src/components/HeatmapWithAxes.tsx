@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { dateTimeParse, TimeRange, dateTime } from '@grafana/data';
+import { dateTimeParse, TimeRange, dateTime, RawTimeRange } from '@grafana/data';
 
 import { TimeRegion } from './TimeRegionEditor';
 import { BucketData } from '../bucket';
@@ -14,7 +14,7 @@ interface HeatmapWithAxesProps {
   height: number;
   colorDisplay: (value: number) => string;
   timeZone: string;
-  timeRange: TimeRange;
+  timeRange: TimeRange | { from: Date, to: Date, raw: RawTimeRange };
   dailyInterval: [number, number];
   regions: TimeRegion[];
   onHover: (value?: number) => void;

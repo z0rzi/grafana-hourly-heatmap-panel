@@ -12,8 +12,9 @@ interface XAxisProps {
 }
 
 const localeOptions = {
-  month: '2-digit',
-  day: '2-digit',
+  weekday: 'long' as 'long',
+  // month: '2-digit',
+  // day: '2-digit',
 };
 
 const referenceText = dateTimeParse(0).toDate().toLocaleDateString(undefined, localeOptions);

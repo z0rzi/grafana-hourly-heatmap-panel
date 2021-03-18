@@ -58,6 +58,25 @@ export const Chart: React.FC<ChartProps> = ({
     dailyIntervalHours,
   ]);
 
+  // setting the time range to the bucket data
+  const my_timeRange = {
+    raw: timeRange.raw,
+    from: new Date(
+      bucketData.points.map(pt => pt.dayMillis).reduce(
+        (acc, millis) => (acc < 0 ? millis: (acc < millis? acc: millis)),
+        -1
+      )
+    ),
+    to: new Date(
+      bucketData.points.map(pt => pt.dayMillis).reduce(
+        (acc, millis) => (acc < 0 ? millis: (acc > millis? acc: millis)),
+        -1
+      )
+    )
+  };
+
+  console.log({ bucketData })
+
   const colorMapper = buildColorMapper(valueField);
 
   // Calculate dimensions for the legend.
