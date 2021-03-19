@@ -1,5 +1,13 @@
 import * as d3 from 'd3';
-import { TimeRange, dateTime, dateTimeParse, DisplayProcessor, Field, getDisplayProcessor, RawTimeRange } from '@grafana/data';
+import {
+  TimeRange,
+  dateTime,
+  dateTimeParse,
+  DisplayProcessor,
+  Field,
+  getDisplayProcessor,
+  RawTimeRange,
+} from '@grafana/data';
 
 export interface Point {
   time: number;
@@ -82,12 +90,19 @@ export const groupByDay = (points: Point[]): PointSet[] => {
 export const defaultDisplay: DisplayProcessor = (value: any) => ({ numeric: value, text: value.toString() });
 const minutesPerDay = 24 * 60;
 
+const ONE_DAY = 1000 * 60 * 60 * 24;
+const ONE_WEEK = ONE_DAY * 7;
+
+const monDate = new Date('2020-01-06');
+let SOME_MONDAY = monDate.getTime();
+SOME_MONDAY = (SOME_MONDAY % ONE_WEEK) - (SOME_MONDAY % ONE_DAY);
+
 // bucketize returns the main data structure used by the visualizations.
 export const bucketize = (
   timeField: Field<number>,
   valueField: Field<number>,
   timeZone: string,
-  timeRange: (TimeRange | { from: Date, to: Date, raw: RawTimeRange }),
+  timeRange: TimeRange | { from: Date; to: Date; raw: RawTimeRange },
   dailyInterval: [number, number]
 ): BucketData => {
   // Convert data frame fields to rows.
@@ -96,38 +111,17 @@ export const bucketize = (
     value: valueField.values.get(i),
   }));
 
-  const oneDay = 1000 * 60 * 60 * 24
-  const oneWeek = oneDay * 7;
-  const timezoneOffset = new Date().getTimezoneOffset() * 60 * 1000;
+  const firstDate = rows[0].time;
+  const firstMonday = firstDate - (((firstDate) - SOME_MONDAY) % ONE_WEEK) + ONE_WEEK;
+  rows.forEach(row => {
+    if (row.time < firstMonday) {
+      row.time += ONE_WEEK;
+    } else if (row.time > firstMonday + ONE_WEEK) {
+      const diff = row.time - firstMonday;
 
-  const isMonday = (millis: number) => {
-    millis = Number(millis) - timezoneOffset;
-    let someMonday = new Date('2020-01-06').getTime() - timezoneOffset;
-    someMonday = someMonday % oneWeek - someMonday % oneDay;
-
-    millis = millis % oneWeek - millis % oneDay;
-    return millis === someMonday;
-  }
-
-  let nonMondayMet = false;
-  let firstMonday = null;
-  for (let i = 0; i < rows.length; i++) {
-    const todayIsMonday = isMonday(rows[i].time);
-    if (!todayIsMonday && !nonMondayMet) {
-      nonMondayMet = true;
+      row.time -= ONE_WEEK * Math.floor(diff / ONE_WEEK);
     }
-    if (todayIsMonday && nonMondayMet && !firstMonday) {
-      firstMonday = rows[i].time
-    }
-
-    if (firstMonday === null) {
-      rows[i].time += oneWeek;
-    } else if (rows[i].time >= (firstMonday + oneWeek)) {
-      const diff = rows[i].time - firstMonday;
-
-      rows[i].time -= oneWeek * Math.floor(diff / oneWeek);
-    }
-  }
+  });
 
   // Get the time range extents in the dashboard time zone.
   const extents = [

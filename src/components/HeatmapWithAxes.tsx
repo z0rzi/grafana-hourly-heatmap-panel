@@ -14,7 +14,7 @@ interface HeatmapWithAxesProps {
   height: number;
   colorDisplay: (value: number) => string;
   timeZone: string;
-  timeRange: TimeRange | { from: Date, to: Date, raw: RawTimeRange };
+  timeRange: TimeRange | { from: Date; to: Date; raw: RawTimeRange };
   dailyInterval: [number, number];
   regions: TimeRegion[];
   onHover: (value?: number) => void;

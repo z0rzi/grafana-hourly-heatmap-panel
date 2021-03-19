@@ -62,20 +62,16 @@ export const Chart: React.FC<ChartProps> = ({
   const my_timeRange = {
     raw: timeRange.raw,
     from: new Date(
-      bucketData.points.map(pt => pt.dayMillis).reduce(
-        (acc, millis) => (acc < 0 ? millis: (acc < millis? acc: millis)),
-        -1
-      )
+      bucketData.points
+        .map((pt) => pt.dayMillis)
+        .reduce((acc, millis) => (acc < 0 ? millis : acc < millis ? acc : millis), -1)
     ),
     to: new Date(
-      bucketData.points.map(pt => pt.dayMillis).reduce(
-        (acc, millis) => (acc < 0 ? millis: (acc > millis? acc: millis)),
-        -1
-      )
-    )
+      bucketData.points
+        .map((pt) => pt.dayMillis)
+        .reduce((acc, millis) => (acc < 0 ? millis : acc > millis ? acc : millis), -1)
+    ),
   };
-
-  console.log({ bucketData })
 
   const colorMapper = buildColorMapper(valueField);
 
@@ -111,7 +107,7 @@ export const Chart: React.FC<ChartProps> = ({
           height={heatmapHeight}
           colorDisplay={colorMapper}
           timeZone={timeZone}
-          timeRange={timeRange}
+          timeRange={my_timeRange}
           dailyInterval={dailyIntervalHours}
           regions={regions}
           onHover={onHeatmapHover}
