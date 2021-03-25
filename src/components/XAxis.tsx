@@ -3,12 +3,8 @@ import * as d3 from 'd3';
 import { DateTime, dateTimeParse } from '@grafana/data';
 
 interface XAxisProps {
-  values: any[];
-  from: DateTime;
-  to: DateTime;
   width: number;
-  numDays: number;
-  timeZone: string;
+  timeZone: string
 }
 
 const localeOptions = {
@@ -19,12 +15,20 @@ const localeOptions = {
 
 const referenceText = dateTimeParse(0).toDate().toLocaleDateString(undefined, localeOptions);
 
-export const XAxis: React.FC<XAxisProps> = React.memo(({ width, values, from, to, numDays, timeZone }) => {
-  const x = d3.scaleBand().domain(values).rangeRound([0, width]);
+export const XAxis: React.FC<XAxisProps> = React.memo(({ width, timeZone }) => {
 
-  const xTime = d3.scaleTime().domain([from.toDate(), to.toDate()]).range([0, width]);
+  const someDay = dateTimeParse(0);
 
-  const every = calculateTickInterval(width, numDays, referenceText);
+  const monday = someDay.startOf('isoWeek').valueOf();
+  const sunday = someDay.endOf('isoWeek').valueOf();
+
+  const x = d3.scaleTime().domain([monday, sunday]).rangeRound([0, width]);
+
+  const xTime = d3.scaleTime().domain([monday, sunday]).range([0, width]);
+
+  const every = calculateTickInterval(width, 7, referenceText);
+
+  console.log('every', every)
 
   const xTimeAxis = d3
     .axisBottom(xTime)
@@ -37,8 +41,9 @@ export const XAxis: React.FC<XAxisProps> = React.memo(({ width, values, from, to
 
   const xCategoryAxis = d3
     .axisBottom(x)
+    .ticks(7)
     .tickFormat((d) =>
-      dateTimeParse(parseInt(d, 10), { timeZone }).toDate().toLocaleDateString(undefined, localeOptions)
+      dateTimeParse(d.valueOf(), { timeZone }).toDate().toLocaleDateString(undefined, localeOptions)
     );
 
   const xAxis: any = every > 1 ? xTimeAxis : xCategoryAxis;
@@ -46,7 +51,10 @@ export const XAxis: React.FC<XAxisProps> = React.memo(({ width, values, from, to
   return (
     <g
       ref={(node) => {
-        const container = d3.select(node).call(xAxis);
+        const container = d3.select(node).call(xAxis)
+          .selectAll("text")
+          .style("text-anchor", "middle")
+          .attr("transform", "translate(" + (width / 7) / 2 + ", 0)");
 
         // Remove junk.
         container.select('.domain').remove();

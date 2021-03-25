@@ -41,19 +41,6 @@ export const Heatmap: React.FC<HeatmapProps> = ({
   cellBorder,
   tooltip,
 }) => {
-  console.log({
-    values, // timeMillis ; 1/week
-    data,
-    colorDisplay,
-    width,
-    height,
-    numBuckets, // amount of values per day
-    timeZone,
-    regions,
-    onHover,
-    cellBorder,
-    tooltip,
-  })
   const theme = useTheme();
 
   const x = d3.scaleLinear([0, width]).domain([0, MINUTES_PER_DAY * 7]);

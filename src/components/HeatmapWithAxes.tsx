@@ -67,7 +67,7 @@ export const HeatmapWithAxes: React.FC<HeatmapWithAxesProps> = ({
   return (
     <g transform={`translate(${offset.left}, ${offset.top})`}>
       <g transform={`translate(0, ${chartHeight})`}>
-        <XAxis values={values} from={tzFrom} to={tzTo} width={chartWidth} numDays={numDays} timeZone={timeZone} />
+        <XAxis width={chartWidth} timeZone={timeZone} />
       </g>
       <YAxis height={chartHeight} dailyInterval={dailyInterval} />
       <Heatmap
