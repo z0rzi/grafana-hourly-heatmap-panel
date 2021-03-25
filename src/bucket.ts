@@ -111,18 +111,6 @@ export const bucketize = (
     value: valueField.values.get(i),
   }));
 
-  const firstDate = rows[0].time;
-  const firstMonday = firstDate - (((firstDate) - SOME_MONDAY) % ONE_WEEK) + ONE_WEEK;
-  rows.forEach(row => {
-    if (row.time < firstMonday) {
-      row.time += ONE_WEEK;
-    } else if (row.time > firstMonday + ONE_WEEK) {
-      const diff = row.time - firstMonday;
-
-      row.time -= ONE_WEEK * Math.floor(diff / ONE_WEEK);
-    }
-  });
-
   // Get the time range extents in the dashboard time zone.
   const extents = [
     dateTimeParse(timeRange.from.valueOf(), { timeZone }).startOf('day'),

@@ -10,16 +10,15 @@ import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 
 import { Tooltip } from './Tooltip';
-const minutesPerDay = 24 * 60;
+const MINUTES_PER_DAY = 24 * 60;
 interface HeatmapProps {
-  values: string[];
+  values: number[];
   data: BucketData;
   colorDisplay: (value: number) => string;
   width: number;
   height: number;
   numBuckets: number;
   timeZone: string;
-  dailyIntervalMinutes: [number, number];
   regions: TimeRegion[];
   onHover: (value?: number) => void;
   cellBorder: boolean;
@@ -30,44 +29,56 @@ interface HeatmapProps {
  * A two-dimensional grid of colored cells.
  */
 export const Heatmap: React.FC<HeatmapProps> = ({
-  values,
+  values, // timeMillis ; 1/day
   data,
   colorDisplay,
   width,
   height,
   numBuckets,
   timeZone,
-  dailyIntervalMinutes,
   regions,
   onHover,
   cellBorder,
   tooltip,
 }) => {
+  console.log({
+    values, // timeMillis ; 1/week
+    data,
+    colorDisplay,
+    width,
+    height,
+    numBuckets, // amount of values per day
+    timeZone,
+    regions,
+    onHover,
+    cellBorder,
+    tooltip,
+  })
   const theme = useTheme();
 
-  const x = d3.scaleBand().domain(values).range([0, width]);
+  const x = d3.scaleLinear([0, width]).domain([0, MINUTES_PER_DAY * 7]);
+  const y = d3.scaleBand<number>([0, height]).domain(values);
 
-  const y = d3.scaleLinear().domain(dailyIntervalMinutes).range([0, height]);
+  const cellWidth = width / 7 / numBuckets;
+  const cellHeight = height / values.length;
 
-  const cellWidth = Math.ceil(x.bandwidth());
-  const cellHeight = bucketHeight(height, numBuckets, dailyIntervalMinutes);
-
-  const intervalMinutes = dailyIntervalMinutes[1] - dailyIntervalMinutes[0];
+  const intervalMinutes = 1440;
   const pixelsPerMinute = height / intervalMinutes;
 
   return (
     <>
       <g>
         {data.points.map((d, i) => {
-          const startOfDay = dateTimeParse(d.dayMillis, { timeZone }).startOf('day');
+          const date = dateTimeParse(d.dayMillis, { timeZone });
+          const startOfWeek = date.startOf('isoWeek').valueOf();
           const bucketStart = dateTimeParse(d.bucketStartMillis, { timeZone });
-          const minutesSinceStartOfDay = bucketStart.hour!() * 60 + bucketStart.minute!();
+          const minsSinceStartOfWeek = (d.dayMillis - startOfWeek) / 1000 / 60;
           const displayValue = data.valueField.display!(d.value);
 
           const content = (
             <rect
-              x={x(startOfDay.valueOf().toString())}
-              y={Math.ceil(y(minutesSinceStartOfDay) ?? 0)}
+              x={x(minsSinceStartOfWeek.valueOf())}
+              y={y(startOfWeek)}
               fill={colorDisplay(d.value)}
               width={cellWidth}
               height={cellHeight}
@@ -130,11 +141,4 @@ export const Heatmap: React.FC<HeatmapProps> = ({
       </g>
     </>
   );
-};
-
-const bucketHeight = (height: number, numBuckets: number, dailyIntervalMinutes: [number, number]) => {
-  const minutesPerBucket = minutesPerDay / numBuckets;
-  const intervalMinutes = dailyIntervalMinutes[1] - dailyIntervalMinutes[0];
-  const pixelsPerBucket = height / (intervalMinutes / minutesPerBucket);
-  return Math.ceil(pixelsPerBucket);
 };

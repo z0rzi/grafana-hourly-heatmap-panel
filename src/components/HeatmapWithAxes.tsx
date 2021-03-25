@@ -54,16 +54,15 @@ export const HeatmapWithAxes: React.FC<HeatmapWithAxesProps> = ({
 
   const numDays = tzTo.diff(tzFrom, 'days') + 1;
 
-  // Generate time values for the X axis. These are used to center the dates on
-  // the X axis under each day. Only used when the panel dimensions allow a
+  // Generate time values for the Y axis. These are used to center the dates on
+  // the Y axis next to each week. Only used when the panel dimensions allow a
   // tick per day.
-  let values: string[] = [];
-  for (let i = 0; i < numDays; i++) {
-    const day = dateTime(tzFrom).add(i, 'day');
-    values.push(day.valueOf().toString());
-  }
-
-  const dailyIntervalMinutes: [number, number] = [dailyInterval[0] * 60, dailyInterval[1] * 60];
+  let values: number[] = [];
+  data.points.forEach(({dayMillis}) => {
+    const w = dateTimeParse(dayMillis, { timeZone }).startOf('isoWeek').valueOf();
+    if (!values.includes(w))
+      values.push(w);
+  });
 
   return (
     <g transform={`translate(${offset.left}, ${offset.top})`}>
@@ -79,7 +78,6 @@ export const HeatmapWithAxes: React.FC<HeatmapWithAxesProps> = ({
         height={chartHeight}
         colorDisplay={colorDisplay}
         timeZone={timeZone}
-        dailyIntervalMinutes={dailyIntervalMinutes}
         regions={regions}
         onHover={onHover}
         cellBorder={cellBorder}
